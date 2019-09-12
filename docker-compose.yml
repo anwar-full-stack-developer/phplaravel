@@ -1,0 +1,68 @@
+version: '3'
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: ./php-fpm/7.2/Dockerfile
+    image: taskmphp72
+    container_name: taskmphp72
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./www:/var/www
+      - ./php-fpm/7.2/local.ini:/usr/local/etc/php-fpm/conf.d/local.ini
+    ports:
+      - "9000:9000"
+    depends_on:
+      - mysql
+
+    networks:
+      - app-network
+
+  #Nginx Service
+  nginx:
+    image: nginx:alpine
+    container_name: taskm_nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./www:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  mysql:
+    image: mysql:5.7.22
+    container_name: taskm_mysql
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: 'taskm'
+      MYSQL_USER: 'taskm'
+      MYSQL_PASSWORD: 'Passw0rd'
+      MYSQL_ROOT_PASSWORD: 'Passw0rd'
+    volumes:
+      - ./taskm_datamysql:/var/lib/mysql
+      - ./mysql/5.7.22/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
+
+
+volumes:
+  taskmmysqldata:
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
